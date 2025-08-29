@@ -1,0 +1,25 @@
+# backend/requirements.txt
+
+# Web Framework
+fastapi
+uvicorn[standard]
+
+# LangChain y Agentes
+langchain
+langchain-openai
+langchain-community
+
+# Vector Store (Local con ChromaDB)
+chromadb
+pypdf
+tiktoken
+
+# Herramientas del Agente (Toolkits)
+tavily-python 
+
+# Base de Datos (PostgreSQL)
+sqlalchemy
+psycopg2-binary # Driver de PostgreSQL
+
+# Utilidades
+python-dotenv
