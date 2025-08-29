@@ -12,9 +12,6 @@ services:
       - ./backend/.env
     # Moviendo la TAVILY_API_KEY aquí, donde realmente se necesita.
     # También puedes mantenerla en tu archivo .env y quitarla de aquí.
-    environment:
-      - TAVILY_API_KEY=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
-    # Asegura que el backend no inicie hasta que postgres esté listo
     depends_on:
       - postgres
     extra_hosts:
