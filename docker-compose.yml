@@ -1,4 +1,3 @@
-# mi_agente_ia/docker-compose.yml
 version: "3.8"
 
 services:
@@ -10,44 +9,46 @@ services:
       - ./backend/app:/code/app
     env_file:
       - ./backend/.env
-    # Moviendo la TAVILY_API_KEY aquí, donde realmente se necesita.
-    # También puedes mantenerla en tu archivo .env y quitarla de aquí.
+    # El backend ahora depende de AMBAS bases de datos
     depends_on:
       - postgres
+      - redis
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
   frontend:
-    # La indentación ahora es correcta, está bajo "services"
     build:
-      # La sintaxis de "build" también está corregida (sin guiones)
       context: ./frontend
       target: builder
     ports:
       - "5173:5173"
     volumes:
       - ./frontend:/app
-      # No montar node_modules para usar los del contenedor (bun)
       - /app/node_modules
-    # Este comando ahora se ejecutará en el contenedor "builder", que sí
-    # entiende "bun", permitiendo el hot-reloading de Vite.
     command: bun run dev -- --host
 
   postgres:
-    # La indentación ahora es correcta, está bajo "services"
     image: postgres:15-alpine
     ports:
-      # Puedes descomentar esto si necesitas conectarte a la DB desde tu máquina
       - "5432:5432"
     volumes:
-      # Este volumen persistirá los datos de la base de datos
       - postgres_data:/var/lib/postgresql/data/
     environment:
       - POSTGRES_USER=danro
       - POSTGRES_PASSWORD=danrodev
       - POSTGRES_DB=agente_db
-      # He quitado la TAVILY_API_KEY de aquí, ya que no pertenece a postgres
     restart: always
+
+  # --- NUEVO SERVICIO DE REDIS ---
+  redis:
+    image: redis:7-alpine
+    restart: always
+    #ports:
+    # Descomenta si necesitas conectarte desde tu PC con un cliente de Redis
+    # - "6379:6379"
+    volumes:
+      - redis_data:/data
 
 volumes:
   postgres_data:
+  redis_data: # --- NUEVO VOLUMEN PARA PERSISTENCIA DE REDIS ---

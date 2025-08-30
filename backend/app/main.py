@@ -7,7 +7,7 @@ from .db import models
 from .db.database import engine
 
 # Importamos el router de la API
-from .api.routes import chat_routes, websocket_routes # ¡Añade websocket_routes!
+from .api.routes import chat_routes, websocket_routes, auth_routes # ¡Añade websocket_routes!
 
 # Esta línea crea las tablas en la base de datos si no existen.
 # Para entornos de producción, se recomienda usar una herramienta de migración como Alembic.
@@ -31,6 +31,7 @@ app.add_middleware(
 
 # --- Incluir Routers de la API ---
 # Aquí es donde conectamos nuestras rutas modulares a la aplicación principal.
+app.include_router(auth_routes.router)
 app.include_router(chat_routes.router)
 app.include_router(websocket_routes.router) # ¡Conecta el nuevo router!
 

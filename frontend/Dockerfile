@@ -1,6 +1,6 @@
 # --- Etapa 1: Build ---
 # Usa la imagen oficial de Bun, que ya tiene el comando "bun" instalado
-FROM oven/bun:1 as builder
+FROM oven/bun:1 AS builder
 
 # Establece el directorio de trabajo
 WORKDIR /app

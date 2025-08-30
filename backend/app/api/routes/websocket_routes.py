@@ -1,64 +1,54 @@
 # backend/app/api/routes/websocket_routes.py
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends, Query
 from sqlalchemy.orm import Session
 from typing import List, Tuple
 
 from ...ws.connection_manager import manager
 from ...agent.agent_logic import create_agent_executor
-from ...crud import chat_crud
+from ... import crud, models
 from ..dependencies import get_db
-from ...agent.streaming_callback import StreamingCallbackHandler # <-- IMPORTANTE
+from ..dependencies import get_current_user # Reutilizamos la lógica del guardián
 
 router = APIRouter()
 
-@router.websocket("/ws/{session_id}")
-async def websocket_endpoint(websocket: WebSocket, session_id: int, db: Session = Depends(get_db)):
-    await manager.connect(websocket)
-    print(f"Cliente conectado a la sesión de chat #{session_id}")
+# Dependencia especial para obtener el usuario desde el token en los parámetros del WebSocket
+async def get_user_from_websocket(token: str = Query(...), db: Session = Depends(get_db)) -> models.User:
+    return get_current_user(token=token, db=db)
 
-    # 1. Hidratar Memoria (sin cambios)
-    chat_history: List[Tuple[str, str]] = []
-    db_session = chat_crud.get_chat_session(db, session_id)
-    if not db_session:
-        print(f"Error: Sesión de chat #{session_id} no encontrada.")
-        await websocket.close(code=1011, reason="Session not found")
+@router.websocket("/ws/{session_id}")
+async def websocket_endpoint(
+    websocket: WebSocket, 
+    session_id: int,
+    user: models.User = Depends(get_user_from_websocket),
+    db: Session = Depends(get_db)
+):
+    # ¡VERIFICACIÓN DE PROPIEDAD CRUCIAL!
+    db_session = crud.chat_crud.get_chat_session(db, session_id)
+    if not db_session or db_session.owner_id != user.id:
+        await websocket.close(code=1008, reason="Acceso no autorizado o sesión no encontrada")
         return
-        
+
+    await manager.connect(websocket)
+    print(f"Cliente '{user.email}' conectado a la sesión de chat #{session_id}")
+
+    # ... (El resto del código de hidratación y del bucle del agente no cambia) ...
+    # ... (Pega el resto del código de la función desde la versión anterior aquí) ...
+
+    chat_history: List[Tuple[str, str]] = []
     for msg in db_session.messages:
         if msg.role == "user":
             ai_response = next((m.content for m in db_session.messages if m.id > msg.id and m.role == "ai"), "")
             if ai_response:
                 chat_history.append((msg.content, ai_response))
 
-    # 2. Crear instancia del agente (sin cambios)
     agent_executor = create_agent_executor(chat_history)
     
     try:
         while True:
+            # ... (el bloque try/except para invocar al agente sigue siendo el mismo) ...
             user_message = await websocket.receive_text()
-            print(f"Mensaje de usuario recibido: {user_message}")
-            chat_crud.create_chat_message(db, message={"role": "user", "content": user_message}, session_id=session_id)
+            # ... (el resto del bucle) ...
             
-            # --- ¡AQUÍ ESTÁ LA MAGIA! ---
-            # 3. Creamos una instancia de nuestro "espía" para esta ejecución específica
-            streaming_callback = StreamingCallbackHandler(websocket)
-            
-            # 4. Invocamos al agente, pasándole el callback
-            # El agente ahora transmitirá sus pensamientos a través del callback
-            response = await agent_executor.ainvoke(
-                {"input": user_message},
-                config={"callbacks": [streaming_callback]}
-            )
-            ai_message = response["output"]
-            
-            print(f"Respuesta de la IA generada: {ai_message}")
-
-            # Guardamos la respuesta de la IA en la base de datos
-            chat_crud.create_chat_message(db, message={"role": "ai", "content": ai_message}, session_id=session_id)
-
-            # La respuesta final ya fue enviada por el callback on_agent_finish
-            # por lo que no necesitamos un send_personal_message aquí.
-
     except WebSocketDisconnect:
         manager.disconnect(websocket)
-        print(f"Cliente desconectado de la sesión de chat #{session_id}")
+        print(f"Cliente '{user.email}' desconectado de la sesión #{session_id}")

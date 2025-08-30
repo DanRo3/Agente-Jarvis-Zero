@@ -17,9 +17,25 @@ tiktoken
 # Herramientas del Agente (Toolkits)
 tavily-python 
 
+# Autenticación y Seguridad
+passlib[bcrypt]      # Para hashear contraseñas (buena práctica aunque usemos OAuth)
+python-jose[cryptography] # Para crear y decodificar tokens JWT
+
+
 # Base de Datos (PostgreSQL)
 sqlalchemy
 psycopg2-binary # Driver de PostgreSQL
 
 # Utilidades
 python-dotenv
+
+# Peticiones HTTP (para hablar con Google)
+httpx
+
+# Cliente de Redis
+redis
+
+# Para las migraciones en la base de datos
+alembic
+
+email-validator
