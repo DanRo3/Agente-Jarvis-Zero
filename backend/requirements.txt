@@ -36,6 +36,6 @@ httpx
 redis
 
 # Para las migraciones en la base de datos
-alembic
+# alembic
 
 email-validator

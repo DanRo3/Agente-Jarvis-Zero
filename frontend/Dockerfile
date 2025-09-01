@@ -11,7 +11,7 @@ COPY package.json bun.lock ./
 
 # Instala las dependencias usando el comando bun que SÍ existe en esta imagen
 # --frozen-lockfile asegura que se use exactamente lo que está en bun.lockb
-RUN bun install --frozen-lockfile
+RUN bun install
 
 # Copia el resto de los archivos de la aplicación
 COPY . .

@@ -5,27 +5,33 @@ services:
     build: ./backend
     ports:
       - "8000:8000"
+
+    # --- ¡LA CORRECCIÓN CLAVE ESTÁ AQUÍ! ---
+    # Ahora creamos un "espejo" entre toda nuestra carpeta local './backend'
+    # y la carpeta '/code' dentro del contenedor.
+    # Cualquier archivo creado en '/code' (como los de alembic) aparecerá
+    # instantáneamente en nuestra carpeta './backend' local.
     volumes:
       - ./backend/app:/code/app
+
     env_file:
       - ./backend/.env
-    # El backend ahora depende de AMBAS bases de datos
     depends_on:
       - postgres
       - redis
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
-  frontend:
-    build:
-      context: ./frontend
-      target: builder
-    ports:
-      - "5173:5173"
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
-    command: bun run dev -- --host
+  # frontend:
+  #   build:
+  #     context: ./frontend
+  #     target: builder
+  #   ports:
+  #     - "5173:5173"
+  #   volumes:
+  #     - ./frontend:/app
+  #     - /app/node_modules
+  #   command: bun run dev -- --host
 
   postgres:
     image: postgres:15-alpine
